@@ -1,119 +1,12 @@
 # Denoising Diffusion Probabilistic Models
 
-## 生成模型
-
-### 定义
-
-* 一个能随机生成与训练数据一致的模型
-
-**问题**
-
-* 如何对训练数据建模
-* 如何采样
-
-**思路**
-
-* 从一个简单分布采样是容易的
-* 从简单分布到观测数据分布是可以拟合的
-
-**解题思路**
-
-* 将观测数据分布映射到简单分布**【Encoder】**
-* 将简单分布中映射到观测数据分布**【Decoder】**
-
-**一个复杂的分布可以用多个高斯分布来表示**
-
-假设有**K**个高斯分布，这K个高斯分布称作混合模型的隐变量则复杂分布的概率分布是：
-$$
-P_{\theta}=\sum_{i=1}^{K}P(z_{i})*P_{\theta}(x\vert z_{i})
-$$
-这里$P(z_{i})$表示第i个高斯分布在观测数据中所占概率
-
-$P_{\theta}(x\vert z_{i})$表示第i个高斯分布的概率分布函数
-
-
-
-一个复杂的分布可以用多个高斯分布来表示
-
-![image-20241118110157276](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20241118110157276.png)
-
-假设有K个高斯分布，这K个高斯分布称为混合模型的隐变量，则复杂分布的概率分布是：
-$$
-P_{\theta}=\sum_{i=1}^{K}P(z_{i})*P_{\theta}(x\vert z_{i})
-$$
-式中$p_{z_{i}}$表示第i个高斯分布在观测数据中所占概率，$P_{\theta}(x\vert z_{i})$表示第i个高斯分布的概率分布函数
-
-将上式离散表示转换为连续(将z变成连续变量)表示：
-$$
-P_{\theta}=\int P(z)\cdot P_{\theta}(x\vert z)
-$$
-### Diffusion vs VAE
-
-![image-20241120172721526](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20241120172721526.png)
-
-**Diffusion model包含两个过程**
-
-**前向扩散过程**
-
-向观测数据中逐步加入噪声，直到观测数据变成高斯分布
-
-**反向生成过程**
-
-从一个高斯分布中采样，逐步消除噪声，直到变成清晰数据
-
-![image-20241120172445431](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20241120172445431.png)
-
-###
-
-## **前向扩散过程**
-
-### 如何加噪声
-
-$$
-x_{t}=\sqrt{\beta_{t}}*x_{t-1}+\sqrt{1-\beta_{t}}*\varepsilon_{t-1}
-$$
-
-### 加了多少次噪声
-
-在DDPM中一共加入了1000次噪声
-
-
-
-### 重参数采样(为什么weight带根号)
-
-若y是一个高斯分布$y\sim N(\mu,\sigma^2)$,则$\frac{y-\mu}{\sigma}\sim N(0,1)$
-
-设$\varepsilon$为一个标准高斯分布，则$y=\sigma*\varepsilon+\mu \sim N(\mu,\sigma^2)$
-
-因此$x_{t}$满足高斯分布，且$x_{t}\sim N(\beta_{t}*x_{t-1},\sqrt{1-\beta_{t}})$
-
-**在DDPM中，$\beta_{t}$是随着t线性减小的（随着t的增大，$x_{t}$趋近于标准高斯分布）**
-
-### 实现流程图
-
-![image-20241120174153990](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20241120174153990.png)
-
-## 反向生成过程
-
-**从一个高斯分布采样，通过反转过程生成观测图像**
-
-![image-20241118211234438](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20241118211234438.png)
-
-$p_{\theta}$是要生成的观测图像，通过不断对初始图像$p(x_{T})$乘高斯分布生成观测图像。
-
-### 实现流程图
-
-![image-20241120175617136](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20241120175617136.png)
-
-![image-20241121211516697](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20241121211516697.png)
+## 前置知识
 
 ### 极大似然估计（Maximum Likelihood Estimation MLE）
 
 ********
 
 **用于估计统计模型参数的方法，其核心思想是找到使观测数据出现概率最大的参数值。**
-
-#### 基本原理
 
 假设观测数据$x={x_{1},x_{2},...,x_{n}}$是来自某个概率分布$f(x\vert \theta)$的独立分布样本，其中$\theta$是需要估计的参数。
 
@@ -132,7 +25,6 @@ $$
    $$
    \hat{\theta}=\arg \max_{\theta}\ln L(\theta\vert x)
    $$
-   
 
 ### KL散度（Kullback-Leibler Divergence）
 
@@ -180,3 +72,127 @@ $$
 
 * FID测量了两个多元高斯分布之间的Fréchet距离，反映了真实图像分布和生成图像分布在高维特征空间中的相似程度。
 * 较低的FID分数表示生成的图像在视觉质量上接近真实图像，并且在多样性上也与真实图像分布相似。
+
+### 重参数采样(为什么weight带根号)
+
+******
+
+若y是一个高斯分布$y\sim N(\mu,\sigma^2)$,则$\frac{y-\mu}{\sigma}\sim N(0,1)$
+
+设$\varepsilon$为一个标准高斯分布，则$y=\sigma*\varepsilon+\mu \sim N(\mu,\sigma^2)$
+
+由$x_{t}=\sqrt{1-\beta_{t}}*x_{t-1}+\sqrt{\beta_{t}}*\varepsilon_{t-1}$
+
+可得$x_{t}$满足高斯分布，且$x_{t}\sim N(\beta_{t}*x_{t-1},\sqrt{1-\beta_{t}})$
+
+**在DDPM中，$\beta_{t}$是随着t线性减小的（随着t的增大，$x_{t}$趋近于标准高斯分布）**
+
+## 生成模型
+
+### 定义
+
+* 一个能随机生成与训练数据一致的模型
+
+**问题**
+
+* 如何对训练数据建模
+* 如何采样
+
+**思路**
+
+* 从一个简单分布采样是容易的
+* 从简单分布到观测数据分布是可以拟合的
+
+**解题思路**
+
+* 将观测数据分布映射到简单分布**【Encoder】**
+* 将简单分布中映射到观测数据分布**【Decoder】**
+
+**一个复杂的分布可以用多个高斯分布来表示**
+
+假设有**K**个高斯分布，这K个高斯分布称作混合模型的隐变量则复杂分布的概率分布是：
+$$
+P_{\theta}=\sum_{i=1}^{K}P(z_{i})*P_{\theta}(x\vert z_{i})
+$$
+这里$P(z_{i})$表示第i个高斯分布在观测数据中所占概率
+
+$P_{\theta}(x\vert z_{i})$表示第i个高斯分布的概率分布函数
+
+![image-20241123212004598](assets/image-20241123212004598.png)
+
+假设有K个高斯分布，这K个高斯分布称为混合模型的隐变量，则复杂分布的概率分布是：
+$$
+P_{\theta}=\sum_{i=1}^{K}P(z_{i})*P_{\theta}(x\vert z_{i})
+$$
+式中$p_{z_{i}}$表示第i个高斯分布在观测数据中所占概率，$P_{\theta}(x\vert z_{i})$表示第i个高斯分布的概率分布函数
+
+将上式离散表示转换为连续(将z变成连续变量)表示：
+$$
+P_{\theta}=\int P(z)\cdot P_{\theta}(x\vert z)
+$$
+## DDPM
+
+![image-20241123213232448](assets/image-20241123213232448.png)
+
+**Diffusion model包含两个过程**
+
+**前向扩散过程**
+
+向观测数据中逐步加入噪声，直到观测数据变成高斯分布
+
+**反向生成过程**
+
+从一个高斯分布中采样，逐步消除噪声，直到变成清晰数据
+
+## **前向扩散过程**
+
+### 如何加噪声
+
+$$
+x_{t}=\sqrt{1-\beta_{t}}*x_{t-1}+\sqrt{\beta_{t}}*\varepsilon_{t-1}
+$$
+
+### 加了多少次噪声
+
+在DDPM中一共加入了1000次噪声
+
+
+
+### 重参数采样(为什么weight带根号)
+
+若y是一个高斯分布$y\sim N(\mu,\sigma^2)$,则$\frac{y-\mu}{\sigma}\sim N(0,1)$
+
+设$\varepsilon$为一个标准高斯分布，则$y=\sigma*\varepsilon+\mu \sim N(\mu,\sigma^2)$
+
+由$x_{t}=\sqrt{1-\beta_{t}}*x_{t-1}+\sqrt{\beta_{t}}*\varepsilon_{t-1}$
+
+可知$x_{t}$满足高斯分布，且$x_{t}\sim N(\sqrt{1-\beta_{t}}*x_{t-1},\beta_{t})$
+
+**在DDPM中，$\beta_{t}$是随着t线性减小的（随着t的增大，$x_{t}$趋近于标准高斯分布）**
+
+![image-20241123220032479](assets/image-20241123220032479.png)
+
+**给定图片和时间t，前向扩散就是一个确定的过程**
+
+![image-20241123220557271](assets/image-20241123220557271.png)
+
+## 反向生成过程
+
+**从一个高斯分布采样，通过反转过程生成观测图像**
+
+![image-20241123221130334](assets/image-20241123221130334.png)
+
+$p_{\theta}$是要生成的观测图像，通过不断对初始图像$p(x_{T})$乘高斯分布生成观测图像。
+
+**在已知$x_{0}$情况下，反向生成过程是一个确定性的过程**
+
+<img src="assets/image-20241124153148516.png" alt="image-20241124153148516" style="zoom:150%;" />
+
+![image-20241124154835158](assets/image-20241124154835158.png)
+
+**反向生成:**$ q(x_{t-1}\vert x_{t},x_{0})=N(x_{t};\frac{1}{\sqrt{\alpha_{t}}}(x_{t}-\frac{1-\alpha_{t}}{\sqrt{1-\bar{\alpha_{t}}}}\varepsilon_{t}),\beta_{t}*\frac{1-\bar\alpha_{t-1}}{1-\bar{\alpha}_{t}}I) $
+
+### 实现流程图
+
+![image-20241124155504584](assets/image-20241124155504584.png)
+
